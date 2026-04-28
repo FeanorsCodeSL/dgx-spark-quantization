@@ -1,0 +1,47 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# --- Editor / OS ---
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# --- Secrets / config (never commit) ---
+.env
+.env.*
+*.token
+.huggingface/
+
+# --- Hugging Face / Torch caches ---
+hf-cache/
+.cache/
+
+# --- Quantization artifacts (huge — shipped to HF, not GitHub) ---
+# All quantized output goes under artifacts/, gitignored except the
+# explanatory README. See artifacts/README.md for the recipe convention.
+artifacts/*
+!artifacts/README.md
+# Catch-all for raw weight files anywhere in the tree (defensive):
+*.safetensors
+# .. but allow safetensors index files inside the repo (small JSON):
+!*.safetensors.index.json
+# .. and allow them inside templates/ (it's an empty skeleton anyway):
+!templates/**/*.safetensors
+
+# --- Eval bulk (samples_*.jsonl is reproducible; results_*.json is committed) ---
+runs/*/results/**/samples_*.jsonl
+runs/*/results/**/samples_*.json
+
+# --- Log files & temp ---
+*.log
+# .. but keep run logs that document a completed eval:
+!runs/*/results/**/run.log
+*.tmp
+*.bak
+*.FAILED/
