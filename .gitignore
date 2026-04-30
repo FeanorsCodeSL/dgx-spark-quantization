@@ -20,6 +20,7 @@ venv/
 
 # --- Hugging Face / Torch caches ---
 hf-cache/
+hf-cache-mods/
 .cache/
 
 # --- Quantization artifacts (huge — shipped to HF, not GitHub) ---
@@ -40,6 +41,7 @@ runs/*/results/**/samples_*.json
 
 # --- Log files & temp ---
 *.log
+*.pid
 # .. but keep run logs that document a completed eval:
 !runs/*/results/**/run.log
 *.tmp

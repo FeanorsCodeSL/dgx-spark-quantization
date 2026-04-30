@@ -93,6 +93,7 @@ AutoRound INT4, GPTQ, NVFP4, MXFP4, GGUF→safetensors transcoding.
 | run | base model | schemes | status | report |
 |---|---|---|---|---|
 | [`qwen3.6-35b-distill`](./runs/qwen3.6-35b-distill/) | [`lordx64/Qwen3.6-35B-A3B-Claude-4.7-Opus-Reasoning-Distilled`](https://huggingface.co/lordx64/Qwen3.6-35B-A3B-Claude-4.7-Opus-Reasoning-Distilled) | FP8 dynamic, AWQ-INT4 GEMM | done (2026-04-27) | [REPORT](./runs/qwen3.6-35b-distill/REPORT.md) |
+| [`nemotron-3-nano-omni-30b-a3b`](./runs/nemotron-3-nano-omni-30b-a3b/) | [`nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16`](https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16) | AWQ-INT4 GEMM | in-progress | [REPORT](./runs/nemotron-3-nano-omni-30b-a3b/REPORT.md) |
 
 ### Headline (qwen3.6-35b-distill)
 
