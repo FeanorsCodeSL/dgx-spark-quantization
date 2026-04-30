@@ -13,7 +13,8 @@ dgx-spark-quantization/
 │   ├── repo-layout.md                 this file
 │   └── schemes/                       per-scheme reference (portable across models)
 │       ├── fp8-dynamic.md
-│       └── awq-gemm.md                (add more as schemes are implemented)
+│       ├── awq-gemm.md
+│       └── awq-compressed-tensors.md
 │
 ├── tools/                             generic, model-agnostic tooling
 │   ├── serve_vllm_docker.sh           DGX-Spark vLLM container launcher
@@ -23,31 +24,42 @@ dgx-spark-quantization/
 ├── templates/
 │   └── run/                           skeleton — copy when starting a new run
 │       ├── README.md                  per-run index template
+│       ├── PLAN.md                    execution plan / phase checklist
 │       ├── REPORT.md                  full quant-report template
 │       ├── recipes/                   (empty; .gitkeep)
 │       └── results/                   (empty; .gitkeep)
 │
 ├── runs/                              one subdir per (base model)
-│   └── qwen3.6-35b-distill/           the first instance
-│       ├── README.md                  this run's index
-│       ├── REPORT.md                  full quant report (bf16 / FP8 / AWQ deltas)
-│       ├── PLAN.md                    historical planning blueprint
-│       ├── HF_PREVIEW_FP8.md          canonical model-card source for the FP8 artifact
-│       ├── HF_PREVIEW_AWQ.md          canonical model-card source for the AWQ artifact
+│   ├── qwen3.6-35b-distill/           completed reference run
+│   │   ├── README.md                  this run's index
+│   │   ├── REPORT.md                  full quant report (bf16 / FP8 / AWQ deltas)
+│   │   ├── PLAN.md                    historical planning blueprint
+│   │   ├── HF_PREVIEW_FP8.md          canonical model-card source for the FP8 artifact
+│   │   ├── HF_PREVIEW_AWQ.md          canonical model-card source for the AWQ artifact
+│   │   ├── recipes/
+│   │   │   ├── fp8_dynamic.py         model-specific FP8 driver
+│   │   │   ├── awq_gemm.py            model-specific AWQ-GEMM driver
+│   │   │   └── inspect_modules.py     architecture-discovery helper
+│   │   └── results/
+│   │       ├── README.md              what's here, how to reproduce
+│   │       ├── awq_full/              results_*.json + run.log
+│   │       ├── fp8_full/
+│   │       └── bf16_full/
+│   └── nemotron-3-nano-omni-30b-a3b/  in-progress Nemotron Omni run
+│       ├── README.md
+│       ├── PLAN.md                    current plan and phase checklist
+│       ├── REPORT.md
 │       ├── recipes/
-│       │   ├── fp8_dynamic.py         model-specific FP8 driver
-│       │   ├── awq_gemm.py            model-specific AWQ driver
-│       │   └── inspect_modules.py     architecture-discovery helper
+│       │   ├── awq_compressed_tensors.py
+│       │   ├── _classify.py
+│       │   └── inspect_modules.py
 │       └── results/
-│           ├── README.md              what's here, how to reproduce
-│           ├── awq_full/              results_*.json + run.log
-│           ├── fp8_full/
-│           └── bf16_full/
 │
 ├── artifacts/                         all quantized model outputs (gitignored)
 │   ├── README.md                      (committed) explains the convention
 │   ├── Qwen3.6-...-FP8-Dynamic/       FP8 artifact, ready to upload to HF
-│   └── Qwen3.6-...-AWQ-INT4/          AWQ artifact, ready to upload to HF
+│   ├── Qwen3.6-...-AWQ-INT4/          AWQ artifact, ready to upload to HF
+│   └── Nemotron-3-...-AWQ-INT4/       Nemotron AWQ compressed-tensors artifact
 │
 ├── hf-cache/                          (optional) local HF download cache (gitignored)
 └── .venv/                             local Python env (gitignored)
@@ -68,11 +80,12 @@ If a file would apply unchanged to a different base model, it goes in
 | Eval driver (lm-eval against vLLM) | `tools/` | model-agnostic |
 | vLLM container launcher | `tools/` | depends only on Docker + vLLM image |
 | cgroup memory wrapper | `tools/` | depends only on systemd-run |
-| Scheme reference (FP8 dynamic, AWQ-GEMM, ...) | `docs/schemes/` | portable across architectures |
+| Scheme reference (FP8 dynamic, AWQ-GEMM, AWQ compressed-tensors, ...) | `docs/schemes/` | portable across architectures |
 | Onboarding guide | `docs/adding-a-run.md` | model-agnostic |
 | HF publishing guide | `HUGGINGFACE_PUBLISHING.md` | model-agnostic |
 | The actual quantizer for one model | `runs/<run>/recipes/` | architecture-specific |
 | One model's eval results | `runs/<run>/results/` | per-run |
+| One model's execution plan | `runs/<run>/PLAN.md` | per-run |
 | One model's writeup | `runs/<run>/REPORT.md` | per-run |
 | Quantized model bytes (safetensors) | top level / gitignored | uploaded to HF, not GitHub |
 

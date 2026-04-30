@@ -17,8 +17,8 @@
 | build | bits | disk | MMLU | GSM8K | ARC-C | Δ MMLU vs bf16 |
 |---|---|---|---|---|---|---|
 | bf16 baseline | 16 | ~? GiB | ? | ? | ? | — |
-| FP8 W8A8 dynamic | 8 | ~? GiB | ? | ? | ? | ? |
-| AWQ-INT4 GEMM | 4 | ~? GiB | ? | ? | ? | ? |
+| <build A> | ? | ~? GiB | ? | ? | ? | ? |
+| <build B> | ? | ~? GiB | ? | ? | ? | ? |
 
 *One-line headline interpretation goes here.*
 
@@ -36,6 +36,7 @@ For full numbers, settings, and the three-way head-to-head, see
 
 | path | content |
 |---|---|
+| [`PLAN.md`](./PLAN.md) | execution plan and phase checklist |
 | [`REPORT.md`](./REPORT.md) | full quant report with deltas |
 | [`recipes/`](./recipes/) | model-specific quantizer drivers |
 | [`results/`](./results/) | `results_*.json` + `run.log` per full eval |

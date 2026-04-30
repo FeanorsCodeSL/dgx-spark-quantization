@@ -26,8 +26,8 @@ SLUG="<your-slug>"          # e.g. llama4-70b-instruct
 cp -r templates/run "runs/${SLUG}"
 ```
 
-You now have `runs/<slug>/` with placeholder `README.md` and `REPORT.md` and
-empty `recipes/` + `results/` subdirs.
+You now have `runs/<slug>/` with placeholder `README.md`, `PLAN.md`, and
+`REPORT.md`, plus empty `recipes/` + `results/` subdirs.
 
 ---
 
@@ -51,7 +51,7 @@ re-derive it from `config.json`.
 
 ## 3. Pick the schemes
 
-The two schemes documented in this repo today:
+The schemes documented in this repo today:
 
 - [`docs/schemes/fp8-dynamic.md`](./schemes/fp8-dynamic.md) — 2× compression,
   effectively lossless on most architectures. Native vLLM. Requires modern
@@ -59,6 +59,9 @@ The two schemes documented in this repo today:
 - [`docs/schemes/awq-gemm.md`](./schemes/awq-gemm.md) — 4× compression,
   ~1–3 pp MMLU loss with data-free RTN. Preserves multimodal stack at fp16
   by default.
+- [`docs/schemes/awq-compressed-tensors.md`](./schemes/awq-compressed-tensors.md)
+  — calibrated AWQ W4A16 saved in `compressed-tensors` `pack-quantized`
+  format for vLLM's compressed-tensors loader path.
 
 Future schemes worth adding when you do them: AutoRound INT4, GPTQ, NVFP4,
 MXFP4, GGUF→safetensors transcoding. When you implement one for the first

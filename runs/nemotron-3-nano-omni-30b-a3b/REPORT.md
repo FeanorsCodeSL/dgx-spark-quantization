@@ -1,167 +1,82 @@
-# <BASE_MODEL_SLUG> — Quantization Report
+# Nemotron-3-Nano-Omni-30B-A3B-Reasoning — Quantization Report
 
-> Copy and fill in. Delete the `*<text>*` placeholder hints as you go.
+**Status:** in progress. The AWQ artifact is built and smoke-tested; full
+AWQ, NVIDIA NVFP4, and bf16 evals are pending.
 
-**Base model**: [`<org>/<name>`](https://huggingface.co/<org>/<name>)
-*(N B parameters / X B active for MoE, architecture, distill source if any)*
+**Base model**:
+[`nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16`](https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16)
 
-**Hardware**: *(e.g. NVIDIA DGX Spark, GB10 / SM121a, 128 GiB unified memory)*
+**Hardware:** NVIDIA DGX Spark, GB10 / SM121a, 128 GiB unified memory.
 
-**Goal**: produce vLLM-loadable quantizations and measure the quality delta
-against bf16 on reasoning + knowledge benchmarks.
-
-This doc covers *(N quantized builds)* plus the bf16 baseline, all evaluated
-on the same battery (GSM8K + full MMLU + ARC-Challenge) on YYYY-MM-DD.
+**Plan:** [`PLAN.md`](./PLAN.md)
 
 ---
 
 ## TL;DR
 
-| | **bf16 (base)** | **<build A>** | **<build B>** |
-|---|---|---|---|
-| Bits / weight | 16 | 8 | 4 |
-| Activation precision | 16 | 8 dynamic per-token | 16 |
-| Calibration | n/a | none | none (data-free RTN) |
-| Disk size | ~? GiB | ~? GiB | ~? GiB |
-| GSM8K (full 1,319) | ? | ? | ? |
-| MMLU (full 14,042) | ? | ? | ? |
-| ARC-Challenge (full 1,172) | ? | ? | ? |
-| Δ MMLU vs bf16 | — | ? | ? |
+| build | bits | disk | GSM8K | MMLU | ARC-C | status |
+|---|---:|---:|---:|---:|---:|---|
+| AWQ-INT4 W4A16 compressed-tensors | 4 | ~22G | pending | pending | pending | built + vLLM smoke passed |
+| NVFP4 (NVIDIA official) | 4 | ~21G | pending | pending | pending | eval pending |
+| bf16 baseline | 16 | ~66G | pending | pending | pending | eval pending |
 
-**Headline**: *(one paragraph — what to ship and why)*
+The current usable output is the AWQ compressed-tensors artifact at
+`artifacts/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-AWQ-INT4/`. It is not an
+AutoAWQ/GEMM artifact.
 
 ---
 
-## Architecture context
-
-*(What the model is. Layer count, hidden size, MoE config, attention type,
-multimodal stack. The "what to quantize / leave alone" decisions in each
-recipe rest on this.)*
-
----
-
-## Build A — *(scheme name)*
-
-Artifact: [`<artifact-dir>/`](../../<artifact-dir>/)
-Per-artifact model card: [`<artifact-dir>/README.md`](../../<artifact-dir>/README.md)
-Quantizer: [`recipes/<recipe>.py`](./recipes/<recipe>.py)
-Generic scheme reference: [`docs/schemes/<scheme>.md`](../../docs/schemes/<scheme>.md)
-
-### Why this scheme for this model
-
-*(Specific reasons: distill signal lives in attention LoRA → FP8 keeps it /
-multimodal stack must survive → AWQ at fp16 vision / etc.)*
-
-### Implementation notes
-
-*(Anything tricky: memory-budget workarounds, save-time key rewrites, vLLM
-loader quirks, fused-vs-unfused expert decisions.)*
-
-### Settings
+## AWQ Artifact
 
 | key | value |
 |---|---|
-| ... | ... |
+| Recipe | [`recipes/awq_compressed_tensors.py`](./recipes/awq_compressed_tensors.py) |
+| Scheme doc | [`docs/schemes/awq-compressed-tensors.md`](../../docs/schemes/awq-compressed-tensors.md) |
+| Format | `compressed-tensors`, `pack-quantized`, W4A16 |
+| Group size | 64 |
+| Weight quantization | symmetric INT4, routed expert MLP weights only |
+| Dense components | Mamba, attention, shared experts, router, layer 0, embeddings, lm_head, norms, vision/RADIO, audio/Parakeet, projectors |
+| Output | `artifacts/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-AWQ-INT4/` |
+| Size | 6 safetensors shards, ~21.34 GiB payload / ~22G on disk |
+| vLLM image | `ghcr.io/spark-arena/dgx-vllm-eugr-nightly-tf5:20260428` |
 
-### What was stripped vs kept vs quantized
+The recipe uses `llm-compressor` AWQ calibration, then avoids the
+Transformers serializer memory spike by compressing the inner LM in memory
+and streaming compressed LM tensors plus dense multimodal tensors into
+bounded safetensors shards.
 
-- **Stripped**: *(if any — e.g. vision tower, MTP head)*
-- **Quantized**: *(which Linear modules)*
-- **Kept dense**: *(router gates, linear-attn, layer 0, lm_head, …)*
+Smoke transcript:
+[`results/awq_ct_smoke.txt`](./results/awq_ct_smoke.txt)
 
-### Smoke result
-
-*(Live serve verification. Did the model load? Did `<think>` blocks survive
-on a reasoning prompt?)*
-
-```bash
-vllm serve <artifact-dir> --quantization ...
-```
-
-### Full eval (YYYY-MM-DD, total wall-clock H h M min)
-
-| benchmark | n | metric | score |
-|---|---|---|---|
-| GSM8K (5-shot CoT, chat) | 1,319 | exact_match strict | ? ± ? |
-| GSM8K (5-shot CoT, chat) | 1,319 | exact_match flexible | ? ± ? |
-| MMLU overall (5-shot, raw MC) | 14,042 | acc | ? ± ? |
-| MMLU social sciences | — | acc | ? |
-| MMLU other | — | acc | ? |
-| MMLU STEM | — | acc | ? |
-| MMLU humanities | — | acc | ? |
-| ARC-Challenge (raw MC) | 1,172 | acc | ? ± ? |
-| ARC-Challenge (raw MC) | 1,172 | acc_norm | ? ± ? |
-
-*(Best/worst MMLU subtasks, wall-clock breakdown, anything notable.)*
+Smoke result: `/v1/chat/completions` returned `2+2 equals 4.` with
+`finish_reason="stop"` when served as `nemotron-omni-awq-ct`.
 
 ---
 
-## Build B — *(other scheme)*
+## Pending Evals
 
-*(Same structure as Build A.)*
+The final report should be filled after these runs complete:
 
----
+1. AWQ artifact eval: `results/awq_full/`
+2. NVIDIA NVFP4 eval or loader-failure note: `results/nvfp4_full/` or
+   `results/nvfp4_loader_failure.txt`
+3. bf16 baseline eval: `results/bf16_full/`
 
-## BF16 baseline — full eval (YYYY-MM-DD)
-
-*(Same structure. Note any memory-pressure adjustments needed —
-`--max-model-len`, `--gpu-memory-utilization`. Always pin the same KV-cache
-dtype as the quantized runs so the deltas are weight-only.)*
-
----
-
-## Three-way head-to-head: bf16 vs <A> vs <B>
-
-Same harness, same prompts, same `temperature=0`, same KV-cache dtype.
-Deltas signed; positive means the quantized build *beat* bf16 on that metric.
-
-| benchmark | metric | **bf16** | **<A>** | Δ A | **<B>** | Δ B |
-|---|---|---|---|---|---|---|
-| GSM8K | exact_match strict | ? | ? | ? | ? | ? |
-| MMLU | overall acc | ? | ? | ? | ? | ? |
-| ... | | | | | | |
-
-**What the deltas say**: *(the analysis paragraphs. Be honest about what's
-inside ± stderr — that's noise, not a signal.)*
+Use the eval order and commands in [`PLAN.md`](./PLAN.md): AWQ first, then
+NVFP4, then bf16.
 
 ---
 
-## Side-by-side recipe table
+## File Index
 
-| dimension | <A> | <B> |
-|---|---|---|
-| Format | ... | ... |
-| ... | ... | ... |
-
----
-
-## Decision matrix (with measured numbers)
-
-| if you care about... | pick | why |
-|---|---|---|
-| Maximum quality preservation | ... | ... |
-| Smallest disk | ... | ... |
-| Multimodal capability | ... | ... |
-
-**Default recommendation**: *(which build to ship)*
-
----
-
-## Out of scope
-
-- *(things you considered but didn't do, with rationale)*
-
----
-
-## Roadmap checklist
-
-- [x] *(done items)*
-- [ ] *(remaining items)*
-
----
-
-## File index
-
-- `recipes/<scheme>.py` — quantizer
-- `results/<scheme>_full/` — eval JSONs + run.log
-- `<artifact-dir>/` — quantized weights (gitignored, uploaded to HF)
+- [`PLAN.md`](./PLAN.md) — current execution plan and phase checklist.
+- [`README.md`](./README.md) — run index, architecture notes, reproduction
+  commands.
+- [`recipes/awq_compressed_tensors.py`](./recipes/awq_compressed_tensors.py)
+  — working AWQ compressed-tensors recipe.
+- [`recipes/_classify.py`](./recipes/_classify.py) — shared quantize/skip
+  policy.
+- [`results/module_inspection.txt`](./results/module_inspection.txt) —
+  architecture inspection output.
+- [`results/awq_ct_smoke.txt`](./results/awq_ct_smoke.txt) — successful
+  vLLM smoke transcript.

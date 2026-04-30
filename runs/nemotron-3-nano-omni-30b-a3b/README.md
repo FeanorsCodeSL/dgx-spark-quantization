@@ -7,10 +7,11 @@ multimodal (vision + audio), reasoning fine-tune. 17 safetensors shards,
 
 **Hardware**: NVIDIA DGX Spark, GB10 / SM121a, 128 GiB unified memory.
 
-**Status**: in-progress — last updated 2026-04-29
+**Status**: in-progress — last updated 2026-05-01
 
-> Driven by [`docs/plans/nemotron-3-nano-omni-30b-quantization.md`](../../docs/plans/nemotron-3-nano-omni-30b-quantization.md).
-> All recipe / eval / report decisions live there.
+> Driven by [`PLAN.md`](./PLAN.md). The old
+> [`docs/plans/nemotron-3-nano-omni-30b-quantization.md`](../../docs/plans/nemotron-3-nano-omni-30b-quantization.md)
+> is now only a pointer back here.
 
 ---
 
@@ -19,12 +20,12 @@ multimodal (vision + audio), reasoning fine-tune. 17 safetensors shards,
 | build | bits | disk | MMLU | GSM8K (strict) | ARC-C | Δ MMLU vs bf16 |
 |---|---|---|---|---|---|---|
 | bf16 baseline | 16 | ~66 GiB | ? | ? | ? | — |
-| AWQ-INT4 GEMM (ours, multimodal) | 4 | ~22–25 GiB | ? | ? | ? | ? |
+| AWQ-INT4 W4A16 compressed-tensors (ours, multimodal) | 4 | ~22 GiB | ? | ? | ? | ? |
 | NVFP4 (NVIDIA official, eval only) | 4 (NVFP4 experts) | ~21 GiB | ? | ? | ? | ? |
 
-Plan: ship our AWQ-INT4 GEMM build (smallest disk with multimodal preserved);
-cite NVIDIA's FP8 / NVFP4 builds for users who want the official paths.
-Numbers filled in Phase 6.
+Current state: our AWQ artifact exists and passes vLLM smoke. Full AWQ,
+NVFP4, and bf16 evals are still pending. Cite NVIDIA's FP8 / NVFP4 builds
+for users who want the official paths. Numbers filled in Phase 6.
 
 For full numbers, settings, and the head-to-head, see
 [`REPORT.md`](./REPORT.md).
@@ -33,12 +34,14 @@ For full numbers, settings, and the head-to-head, see
 
 ## Schemes used
 
-- [`docs/schemes/awq-gemm.md`](../../docs/schemes/awq-gemm.md) — data-free
-  RTN AWQ-INT4 GEMM. Model-specific deviations (Mamba inner Linears kept
-  dense, layer-0 + shared-expert + router-gate + vision + audio + projectors
-  all kept dense; only the 128 routed experts across the 23 MoE layers get
-  4-bit packed) are documented in `recipes/awq_gemm.py` and in the
-  `REPORT.md`.
+- [`docs/schemes/awq-compressed-tensors.md`](../../docs/schemes/awq-compressed-tensors.md)
+  — calibrated AWQ-INT4 W4A16 in `compressed-tensors` `pack-quantized`
+  format. Model-specific deviations (Mamba inner Linears kept dense,
+  layer-0 + shared-expert + router-gate + vision + audio + projectors all
+  kept dense; only the 128 routed experts across the 23 MoE layers get
+  4-bit packed) are documented in
+  [`recipes/awq_compressed_tensors.py`](./recipes/awq_compressed_tensors.py)
+  and in the `REPORT.md`.
 
 FP8 and NVFP4 are not generated here — see
 [Existing official builds](#existing-official-builds) below.
@@ -55,7 +58,7 @@ the realistic shipping options end-to-end.
   card claims for context but does not measure.
 - [`nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4`](https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4)
   — NVFP4 experts + FP8 mamba/attention + BF16 encoders, ~20.9 GB.
-  Generation **out of scope**. Eval **in scope** in Phase 5 — NVFP4 vLLM
+  Generation **out of scope**. Eval **in scope** in Phase 4 — NVFP4 vLLM
   kernel support on SM121a is unverified, so the phase resolves it
   empirically.
 
@@ -64,7 +67,8 @@ the realistic shipping options end-to-end.
 | path | content |
 |---|---|
 | [`REPORT.md`](./REPORT.md) | full quant report with deltas |
-| [`recipes/`](./recipes/) | model-specific quantizer drivers (AWQ-INT4 GEMM) |
+| [`PLAN.md`](./PLAN.md) | current execution plan and phase checklist |
+| [`recipes/`](./recipes/) | model-specific quantizer drivers (AWQ-INT4 compressed-tensors) |
 | [`results/`](./results/) | `results_*.json` + `run.log` per full eval, plus `module_inspection.txt` and quant logs |
 
 ## Architecture (from config.json)
@@ -219,18 +223,18 @@ HF_HUB_ENABLE_HF_TRANSFER=1 hf download nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reas
 # 2. AWQ quantize (Phase 2). Output goes under artifacts/ (gitignored).
 export SRC_DIR="$PWD/hf-cache/models--nvidia--Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16/snapshots/d15962741057ae3a07147df504060e9f0838224e"
 export DST_DIR="$PWD/artifacts/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-AWQ-INT4"
-tools/run_under_memcap.sh python runs/nemotron-3-nano-omni-30b-a3b/recipes/awq_gemm.py
+tools/run_under_memcap.sh python runs/nemotron-3-nano-omni-30b-a3b/recipes/awq_compressed_tensors.py
 
 # 3. Serve & smoke (Phase 2 verification).
 tools/serve_vllm_docker.sh "$DST_DIR" \
   --kv-cache-dtype fp8_e4m3 \
   --max-model-len 8192 \
-  --gpu-memory-utilization 0.85 \
+  --gpu-memory-utilization 0.55 \
   --reasoning-parser nemotron_v3 \
-  --served-model-name nemotron-omni-awq
+  --served-model-name nemotron-omni-awq-ct
 
 # 4. Eval (Phases 3, 4, 5).
-tools/run_eval_full.sh nemotron-omni-awq "$DST_DIR" \
+tools/run_eval_full.sh nemotron-omni-awq-ct "$DST_DIR" \
   "$PWD/runs/nemotron-3-nano-omni-30b-a3b/results/awq_full"
 ```
 
@@ -244,23 +248,23 @@ The artifact directories are uploaded to Hugging Face per
 ## AWQ build (Phase 2 outputs)
 
 **Artifact**: `artifacts/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-AWQ-INT4/`
-**Recipe**: [`recipes/awq_gemm.py`](./recipes/awq_gemm.py) (uses [`recipes/_classify.py`](./recipes/_classify.py) for the skip policy)
-**Total size**: 21.55 GiB across 6 shards
+**Recipe**: [`recipes/awq_compressed_tensors.py`](./recipes/awq_compressed_tensors.py) (uses [`recipes/_classify.py`](./recipes/_classify.py) for the skip policy)
+**Format**: `quant_method="compressed-tensors"`, `format="pack-quantized"`, W4A16, group size 64, symmetric
+**Total size**: 21.34 GiB payload / ~22G on disk across 6 shards
 **Quantized tensors**: 5,888 (= 23 MoE layers × 128 experts × 2 projections — `up_proj` + `down_proj`)
 **Copied dense**: 1,461 (everything else: Mamba2, attention, vision, audio, projectors, layer 0, router, lm_head, embeds, norms, shared experts)
-**Quantization wall-clock**: ~7 min (pid 81819, scope `run-rb567669de3f2415f92910cedabc9c08b.scope`, peak RSS 22.4 GiB during shard 8)
-**vLLM cold-start**: 220 s (3 min 40 s) on `ghcr.io/spark-arena/dgx-vllm-eugr-nightly-tf5:20260415` with `--gpu-memory-utilization 0.55`
+**Quantization memory**: peak RSS ~94.75 GiB; final RSS ~92.07 GiB
+**vLLM image**: `ghcr.io/spark-arena/dgx-vllm-eugr-nightly-tf5:20260428`
+**Smoke result**: `/v1/chat/completions` returned `2+2 equals 4.` with `finish_reason="stop"`
 
 ### Group-size deviation
 
 Nemotron's `moe_intermediate_size = 1856 = 64 × 29` is not divisible by the
-canonical AWQ-GEMM group size of 128. Each routed-expert `down_proj` has
+canonical AWQ group size of 128. Each routed-expert `down_proj` has
 `in_features=1856`, so per-group quant requires `group_size ∈ {32, 64}`.
 We use **`group_size = 64`** — the largest value that divides both 1856 and
-2688 (the up_proj `in_features`). The plan asserted vLLM's AWQ-GEMM kernel
-supports `{32, 64, 128}`; **smoke-test results below cast doubt on whether
-gs=64 is actually correctly handled by vLLM's `moe_wna16` path on this
-arch — needs verification before re-issuing.**
+2688 (the up_proj `in_features`). The working vLLM path is
+`compressed-tensors` W4A16, not AutoAWQ/GEMM.
 
 ### `mlp1` postscript
 
@@ -274,15 +278,14 @@ keyword filter alone misses modules outside the conventional `vision_*` /
 `*_projector` namings — add an explicit "top-level direct children" probe
 to `inspect_modules.py`.
 
-### `--gpu-memory-utilization` deviation
+### Save-time memory workaround
 
-Plan called for `--gpu-memory-utilization 0.85`, but Spark's GB10 reports
-~76.88 GiB of 121.69 GiB free at serve time (the rest is held by
-unidentified consumers — `nvidia-smi` shows "Memory-Usage: Not Supported"
-on this unified-memory arch, so we can't enumerate them). vLLM refuses to
-start when target utilization exceeds free memory. Lowered to **0.55**
-(~67 GiB target) to fit. The eval phases (3–5) will need the same
-adjustment.
+The default `llmcompressor.oneshot(..., output_dir=..., save_compressed=True)`
+path finished calibration but repeatedly died at `Writing model shards: 0%`
+from a Transformers serialization memory spike. The working recipe runs
+`oneshot(..., output_dir=None, save_compressed=False)`, compresses the
+calibrated inner LM in memory with `ModelCompressor`, then streams compressed
+LM tensors plus dense multimodal tensors into bounded safetensors shards.
 
 ### Quantization config (in artifact `config.json`)
 
@@ -290,21 +293,20 @@ adjustment.
 {
   "bits": 4,
   "group_size": 64,
-  "quant_method": "awq",
-  "version": "gemm",
-  "zero_point": true,
-  "modules_to_not_convert": [
-    "lm_head", "embed_tokens", "embedding",
-    "norm", "layernorm", "rmsnorm",
-    "vision", "radio", "vision_model", "vision_tower", "image_proj", "video",
-    "sound", "audio", "parakeet", "audio_encoder",
-    "projector", "projection", "mlp1",
-    "mamba", "ssm", "in_proj", "out_proj", "dt_proj", "conv1d",
-    "self_attn", "q_proj", "k_proj", "v_proj", "o_proj",
-    "shared_expert",
-    "mixer.gate", "mlp.gate",
-    ".layers.0."
-  ]
+  "quant_method": "compressed-tensors",
+  "format": "pack-quantized",
+  "quantization_status": "compressed",
+  "config_groups": {
+    "group_0": {
+      "weights": {
+        "num_bits": 4,
+        "type": "int",
+        "symmetric": true,
+        "strategy": "group",
+        "group_size": 64
+      }
+    }
+  }
 }
 ```
 
@@ -313,48 +315,17 @@ adjustment.
 ```bash
 tools/serve_vllm_docker.sh "$PWD/artifacts/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-AWQ-INT4" \
   --kv-cache-dtype fp8_e4m3 --max-model-len 8192 --gpu-memory-utilization 0.55 \
-  --reasoning-parser nemotron_v3 --served-model-name nemotron-omni-awq
+  --reasoning-parser nemotron_v3 --served-model-name nemotron-omni-awq-ct
 ```
 
-**Verdict: ✗ FAILED — model produces degenerate looped output on every prompt.**
+**Verdict: passed.** `/v1/models` returned `nemotron-omni-awq-ct`; the
+first `max_tokens=32` request produced reasoning only and stopped by length,
+but the `max_tokens=128` request returned content `2+2 equals 4.` with
+`finish_reason="stop"`. Full transcript:
+[`results/awq_ct_smoke.txt`](./results/awq_ct_smoke.txt).
 
-| probe | prompt | response | expected |
-|---|---|---|---|
-| chat /v1/chat/completions | `Solve: 17 * 23 = ?  Briefly.` | `17 * 23 = 17 * 23 = ...` × 32 reps in `reasoning` field, `content: null`, `finish_reason: length` | `391` |
-| chat /v1/chat/completions | `Hello` | `1\n2\n3\n4\n5\n6\n...\n24\n2` (counting digits, in `reasoning` field) | a greeting |
-| bare /v1/completions | `The capital of France is` | ` a capital of France, but it is a capital of France, but it is a capital of France` | `Paris` |
-
-The model has lost all semantic capability — failure is at the weights /
-loader level, not specific to the math prompt or the reasoning parser.
-Full failure record: `results/awq_smoke.txt`.
-
-**vLLM version observed**: `0.19.1rc1.dev322+g03f8d3a54.d20260415.cu132` —
-**below the model card's required vLLM ≥ 0.20.0**. The plan's Risks
-section explicitly flagged this: `--reasoning-parser nemotron_v3` is
-*accepted* by 0.19.1.dev (no error), but Nemotron-Nano-Omni multimodal
-+ AWQ may not be fully implemented in this dev build. **This is the
-single most likely root cause** — pull a newer Spark vLLM image
-(≥ 0.20.0) and re-run the smoke before assuming the recipe is broken.
-
-**Possible root causes** (must investigate before re-issuing):
-
-1. vLLM's AWQ-GEMM kernel may not actually support `group_size=64` for the
-   Nemotron MoE arch via `moe_wna16` — could be silently producing garbage.
-2. AWQ pack order `[0,4,1,5,2,6,3,7]` may not match vLLM's reverse-order
-   for unfused per-expert AWQ tensors (the qwen3 precedent used fused
-   `gate_up_proj` + `down_proj` 3-D layouts; Nemotron's per-expert 2-D
-   layout may need a different convention).
-3. `modules_to_not_convert` substring matching in vLLM's loader may not
-   behave identically to recipe's `_classify.should_quantize` — vLLM might
-   quantize a critical Linear that the recipe wrote dense, or expect packed
-   AWQ in a slot where we wrote bf16.
-4. State-dict key naming mismatch — vLLM's `hf_to_vllm_mapper` for
-   `NemotronH_Nano_Omni_Reasoning_V3` may rewrite expert names; on-disk
-   names may not align with what the loader expects, causing weights to
-   land in wrong slots.
-
-**Suggested next diagnostic**: serve the BF16 source through this same
-vLLM image first (Phase 3 will do this anyway). If BF16 also loops,
-something is wrong with vLLM/parser. If BF16 is clean, the AWQ recipe is
-the bug — narrow further by re-quantizing with `group_size=32` (also
-divides 1856) to test cause #1.
+The successful serve log selected the compressed-tensors path
+(`quantization=compressed-tensors`,
+`Using CompressedTensorsWNA16MarlinMoEMethod`, `Using Marlin backend for
+WNA16 MoE`). The earlier AutoAWQ/GEMM experiment was removed from the
+tracked recipe set because it is not the working method for this run.

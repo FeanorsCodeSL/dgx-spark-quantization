@@ -3,16 +3,16 @@
 llm-compressor, producing a `compressed-tensors` `pack-quantized` W4A16
 artifact that vLLM loads through its working ungated-MoE loader path.
 
-Why this recipe exists (Phase 2b of the plan):
+Why this recipe exists (Phase 2 of the plan):
 
-  Phase 2a built an AutoAWQ-format artifact (data-free RTN) — packed
+  A prior AutoAWQ-format artifact (data-free RTN) packed
   cleanly but vLLM rejected every kernel path (`awq_marlin`, `awq`,
   `moe_wna16`) because Nemotron uses ungated relu^2 MoE and none of
   those kernels handle it. The fix is the on-disk format vLLM's
   compressed-tensors loader uses for NVIDIA's NVFP4 build (and that
   stelterlab successfully shipped for the LM-only base model).
 
-What this recipe does differently from `awq_gemm.py`:
+What this recipe does differently from the removed AutoAWQ/GEMM attempt:
 
   - Uses `llmcompressor.modifiers.awq.AWQModifier` (data-driven per-channel
     scaling) instead of pure RTN.  Calibrates on 256 prompts of
@@ -137,7 +137,7 @@ def build_recipe(prefix: str = ""):
         # nn.Linear-equivalent under `mixer.gate`)
         f"re:.*{p}backbone\\.layers\\.\\d+\\.mixer\\.gate$",
         # layer-0 (always Mamba in this snapshot, but ignore everything
-        # under it to stay parity with Phase 2a)
+        # under it to stay parity with the original dense-preservation policy)
         f"re:.*{p}backbone\\.layers\\.0\\..*",
         # shared expert MLP (always-active; large per-byte quality contribution)
         f"re:.*{p}backbone\\.layers\\.\\d+\\.mixer\\.shared_experts\\..*",

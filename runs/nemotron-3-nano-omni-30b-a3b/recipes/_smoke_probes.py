@@ -1,7 +1,7 @@
 """4-prompt smoke probe runner for the AWQ-CT artifact.
 
 Hits a vLLM endpoint and writes the verbatim transcript + pass/fail
-verdict.  Used by Phase 2b's smoke validation step.
+verdict. Used by Phase 2's smoke validation step.
 
 Usage:
     python _smoke_probes.py <served-model-name> <transcript-out-path>

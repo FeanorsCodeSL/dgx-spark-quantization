@@ -18,8 +18,9 @@ quantize, eval, and ship — without re-deriving the framework.
 
 - **Generic, reusable tooling** — eval driver, vLLM container launcher,
   cgroup memory-cap wrapper.
-- **Per-scheme reference docs** — what FP8 dynamic is, what AWQ-GEMM is,
-  what to quantize / leave alone, where the pitfalls are.
+- **Per-scheme reference docs** — what FP8 dynamic, AWQ-GEMM, and
+  compressed-tensors AWQ are, what to quantize / leave alone, where the
+  pitfalls are.
 - **One subdirectory per quantized model** ("a *run*") — model-specific
   recipes, eval results, and writeup.
 - **A copy-and-fill template** for adding the next run.
@@ -41,7 +42,7 @@ pip install -r requirements.txt
 # 2. Pick a base model and an existing scheme. The base auto-downloads
 #    from Hugging Face into ~/.cache/huggingface (or $HF_HOME if set).
 SLUG="qwen3.6-35b-distill"            # use the existing example, or copy templates/run
-SCHEME="fp8_dynamic"                  # one of: fp8_dynamic, awq_gemm, ...
+SCHEME="fp8_dynamic"                  # one of: fp8_dynamic, awq_gemm, awq_compressed_tensors, ...
 ARTIFACT="My-Awesome-Model-FP8-Dynamic"
 
 # 3. Quantize. Output goes under artifacts/ (gitignored).
@@ -81,6 +82,7 @@ systemd-run (any modern Ubuntu / Debian / Fedora).
 |---|---|---|---|---|
 | **FP8 W8A8 dynamic** (compressed-tensors) | 8 | none | vLLM native | [`docs/schemes/fp8-dynamic.md`](./docs/schemes/fp8-dynamic.md) |
 | **AWQ-INT4 GEMM** (data-free RTN) | 4 | none | vLLM via `moe_wna16` / AutoAWQ | [`docs/schemes/awq-gemm.md`](./docs/schemes/awq-gemm.md) |
+| **AWQ-INT4 W4A16** (compressed-tensors) | 4 | AWQ calibration | vLLM `compressed-tensors` | [`docs/schemes/awq-compressed-tensors.md`](./docs/schemes/awq-compressed-tensors.md) |
 
 Add a new scheme by writing a `docs/schemes/<name>.md` reference and a
 recipe under `runs/<run>/recipes/<name>.py`. Likely future additions:
@@ -93,7 +95,7 @@ AutoRound INT4, GPTQ, NVFP4, MXFP4, GGUF→safetensors transcoding.
 | run | base model | schemes | status | report |
 |---|---|---|---|---|
 | [`qwen3.6-35b-distill`](./runs/qwen3.6-35b-distill/) | [`lordx64/Qwen3.6-35B-A3B-Claude-4.7-Opus-Reasoning-Distilled`](https://huggingface.co/lordx64/Qwen3.6-35B-A3B-Claude-4.7-Opus-Reasoning-Distilled) | FP8 dynamic, AWQ-INT4 GEMM | done (2026-04-27) | [REPORT](./runs/qwen3.6-35b-distill/REPORT.md) |
-| [`nemotron-3-nano-omni-30b-a3b`](./runs/nemotron-3-nano-omni-30b-a3b/) | [`nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16`](https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16) | AWQ-INT4 GEMM | in-progress | [REPORT](./runs/nemotron-3-nano-omni-30b-a3b/REPORT.md) |
+| [`nemotron-3-nano-omni-30b-a3b`](./runs/nemotron-3-nano-omni-30b-a3b/) | [`nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16`](https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16) | AWQ-INT4 W4A16 compressed-tensors | in-progress | [REPORT](./runs/nemotron-3-nano-omni-30b-a3b/REPORT.md) |
 
 ### Headline (qwen3.6-35b-distill)
 
@@ -122,7 +124,8 @@ FP8 effectively lossless. AWQ trades MMLU for disk + multimodal preservation.
 │   ├── repo-layout.md                     detailed structural walkthrough
 │   └── schemes/                           per-scheme reference (portable across models)
 │       ├── fp8-dynamic.md
-│       └── awq-gemm.md
+│       ├── awq-gemm.md
+│       └── awq-compressed-tensors.md
 │
 ├── tools/                                 generic, model-agnostic tooling
 │   ├── serve_vllm_docker.sh
@@ -131,13 +134,23 @@ FP8 effectively lossless. AWQ trades MMLU for disk + multimodal preservation.
 │
 ├── templates/
 │   └── run/                               skeleton — `cp -r` when starting a new run
+│       ├── README.md
+│       ├── PLAN.md
+│       └── REPORT.md
 │
 ├── runs/
-│   └── qwen3.6-35b-distill/               first run; one subdir per base model
+│   ├── qwen3.6-35b-distill/               completed reference run
+│   │   ├── README.md
+│   │   ├── PLAN.md
+│   │   ├── REPORT.md                      full quant report with deltas
+│   │   ├── recipes/                       model-specific quantizers
+│   │   └── results/                       per-build eval JSONs + run.log
+│   └── nemotron-3-nano-omni-30b-a3b/      in-progress Nemotron Omni run
 │       ├── README.md
-│       ├── REPORT.md                      full quant report with deltas
-│       ├── recipes/                       model-specific quantizers
-│       └── results/                       per-build eval JSONs + run.log
+│       ├── PLAN.md
+│       ├── REPORT.md
+│       ├── recipes/
+│       └── results/
 │
 └── artifacts/                             quantized model outputs (gitignored)
     ├── README.md                          (committed) explains the convention

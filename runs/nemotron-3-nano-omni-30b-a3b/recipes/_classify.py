@@ -1,6 +1,6 @@
 """AWQ skip policy for Nemotron-3-Nano-Omni-30B-A3B-Reasoning.
 
-The Phase 2 recipe (`awq_gemm.py`) and the Phase 1 test
+The Phase 2 recipe (`awq_compressed_tensors.py`) and the Phase 1 test
 (`test_module_classify.py`) both import `should_quantize` from here so the
 policy lives in exactly one place.
 
