@@ -1,7 +1,7 @@
 """Test the AWQ skip policy for Nemotron-3-Nano-Omni-30B-A3B-Reasoning.
 
 Run with:
-    cd /home/sergio/git/dgx-spark-quantization
+    cd <repo>
     source .venv/bin/activate
     pytest runs/nemotron-3-nano-omni-30b-a3b/recipes/test_module_classify.py -v
 

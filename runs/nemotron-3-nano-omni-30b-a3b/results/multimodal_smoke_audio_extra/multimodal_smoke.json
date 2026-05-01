@@ -1,0 +1,90 @@
+{
+  "model": "nemotron-omni-awq-ct",
+  "base_url": "http://localhost:8000/v1",
+  "fixtures": {
+    "image": "<repo>/runs/nemotron-3-nano-omni-30b-a3b/results/multimodal_smoke_audio_extra/fixtures/duck.jpg",
+    "audio": "<repo>/runs/nemotron-3-nano-omni-30b-a3b/results/multimodal_smoke_audio_extra/fixtures/voice-telephony-8khz.wav",
+    "video": "<repo>/runs/nemotron-3-nano-omni-30b-a3b/results/multimodal_smoke_audio_extra/fixtures/sample_demo_1.mp4"
+  },
+  "source_urls": {
+    "image": "https://vllm-public-assets.s3.us-west-2.amazonaws.com/multimodal_asset/duck.jpg",
+    "audio": "https://sample-files.com/downloads/audio/wav/voice-telephony-8khz.wav",
+    "video": "https://huggingface.co/datasets/raushan-testing-hf/videos-test/resolve/main/sample_demo_1.mp4"
+  },
+  "results": [
+    {
+      "name": "image",
+      "ok": true,
+      "elapsed_s": 48.25,
+      "expected": "duck",
+      "usage": {
+        "prompt_tokens": 3343,
+        "total_tokens": 3855,
+        "completion_tokens": 512,
+        "prompt_tokens_details": null
+      },
+      "text": "The user wants me to identify the animal in the image.\n1.  **Analyze the image:** I see a bird swimming in blue water.\n2.  **Identify key features:**\n    *   It has a distinctive iridescent green head. This is a classic male mallard feature.\n    *   It has a yellow beak with a black tip (though the tip isn't super distinct, the yellow color is very prominent).\n    *   The body is brownish/white/grey with a white ring around the neck (collar).\n    *   The tail feathers are black with a white border.\n3.  **Synthesize findings:** These features clearly point to a male Mallard duck.\n4.  **Formulate the answer:** The user requested \"one word\". \"Duck\" or \"Mallard\" would work. \"Duck\" is the general category, \"Mallard\" is the specific species. Given the prompt asks \"What animal\", \"duck\" is the most direct and accurate single-word answer, though \"mallard\" is also correct. I will provide the specific type if possible, but \"duck\" is safer as a general term. Wait, the prompt says \"Answer with one word.\" Let's look at the options. \"Duck\" is one word. \"Mallard\" is one word. \"Mallard duck\" is two words. The most precise single word is \"duck\" or \"mallard\". Let's go with \"duck\" as it's the common name, or \"mallard\" for specificity. Usually, these questions accept the common name. Let's stick with \"duck\" or \"mallard\". Looking at the visual evidence, it is undeniably a male mallard duck. I will provide \"duck\" as the primary answer, but \"mallard\" is more precise. Let's just say \"duck\" to be safe, or \"mallard\" to be precise. Actually, \"duck\" is the animal type. Let's provide \"duck\". Or maybe \"mallard\". Let's look at the constraints again: \"Answer with one word.\" \"Duck\" fits perfectly. \"Mallard\" also fits. I'll go with \"duck\" as it's the fundamental animal type. Wait, looking closer, it is specifically a male mallard. I will answer \"duck\" as it is the most natural single-word answer for \"what animal",
+      "finish_reason": "length",
+      "raw_message": {
+        "role": "assistant",
+        "content": null,
+        "refusal": null,
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": [],
+        "reasoning": "The user wants me to identify the animal in the image.\n1.  **Analyze the image:** I see a bird swimming in blue water.\n2.  **Identify key features:**\n    *   It has a distinctive iridescent green head. This is a classic male mallard feature.\n    *   It has a yellow beak with a black tip (though the tip isn't super distinct, the yellow color is very prominent).\n    *   The body is brownish/white/grey with a white ring around the neck (collar).\n    *   The tail feathers are black with a white border.\n3.  **Synthesize findings:** These features clearly point to a male Mallard duck.\n4.  **Formulate the answer:** The user requested \"one word\". \"Duck\" or \"Mallard\" would work. \"Duck\" is the general category, \"Mallard\" is the specific species. Given the prompt asks \"What animal\", \"duck\" is the most direct and accurate single-word answer, though \"mallard\" is also correct. I will provide the specific type if possible, but \"duck\" is safer as a general term. Wait, the prompt says \"Answer with one word.\" Let's look at the options. \"Duck\" is one word. \"Mallard\" is one word. \"Mallard duck\" is two words. The most precise single word is \"duck\" or \"mallard\". Let's go with \"duck\" as it's the common name, or \"mallard\" for specificity. Usually, these questions accept the common name. Let's stick with \"duck\" or \"mallard\". Looking at the visual evidence, it is undeniably a male mallard duck. I will provide \"duck\" as the primary answer, but \"mallard\" is more precise. Let's just say \"duck\" to be safe, or \"mallard\" to be precise. Actually, \"duck\" is the animal type. Let's provide \"duck\". Or maybe \"mallard\". Let's look at the constraints again: \"Answer with one word.\" \"Duck\" fits perfectly. \"Mallard\" also fits. I'll go with \"duck\" as it's the fundamental animal type. Wait, looking closer, it is specifically a male mallard. I will answer \"duck\" as it is the most natural single-word answer for \"what animal"
+      }
+    },
+    {
+      "name": "audio",
+      "ok": true,
+      "elapsed_s": 6.1,
+      "expected": null,
+      "usage": {
+        "prompt_tokens": 356,
+        "total_tokens": 511,
+        "completion_tokens": 155,
+        "prompt_tokens_details": null
+      },
+      "text": "We need to \"Briefly describe this audio clip.\" So we need a concise description. The audio is a sample voice recording for speech synthesis testing, includes a pangram, numbers, and a statement about the source. So description: A short, clear, synthetic-sounding voice sample used for testing speech synthesis, featuring a pangram, numbers, and a brief intro/outro, with a neutral tone, no background noise, and a short duration. Let's produce a brief description.\n\n\nA short, clean sample voice recording used for speech\u2011synthesis testing; it features a neutral, evenly\u2011paced narration of a pangram, a list of numbers, and a brief statement about the audio\u2019s source, with no background noise or music.",
+      "finish_reason": "stop",
+      "raw_message": {
+        "role": "assistant",
+        "content": "\nA short, clean sample voice recording used for speech\u2011synthesis testing; it features a neutral, evenly\u2011paced narration of a pangram, a list of numbers, and a brief statement about the audio\u2019s source, with no background noise or music.",
+        "refusal": null,
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": [],
+        "reasoning": "We need to \"Briefly describe this audio clip.\" So we need a concise description. The audio is a sample voice recording for speech synthesis testing, includes a pangram, numbers, and a statement about the source. So description: A short, clear, synthetic-sounding voice sample used for testing speech synthesis, featuring a pangram, numbers, and a brief intro/outro, with a neutral tone, no background noise, and a short duration. Let's produce a brief description.\n"
+      }
+    },
+    {
+      "name": "video",
+      "ok": true,
+      "elapsed_s": 7.26,
+      "expected": null,
+      "usage": {
+        "prompt_tokens": 1565,
+        "total_tokens": 1795,
+        "completion_tokens": 230,
+        "prompt_tokens_details": null
+      },
+      "text": "The user wants a brief description of the video.\n\n1.  **Identify the main subject:** A baby/toddler with blonde hair and glasses.\n2.  **Identify the action:** The baby is sitting on a bed, holding a large book (looks like a dictionary or encyclopedia), and \"reading\" it. They are turning the pages.\n3.  **Identify the setting:** A bedroom, likely a child's room given the crib in the background. There's a bed with a patterned quilt.\n4.  **Synthesize the description:** Combine these elements into a concise sentence. \"A baby wearing glasses is sitting on a bed and reading a book.\" Or more detailed: \"A toddler with glasses sits on a bed, holding and turning the pages of a large book as if reading it.\"\n\nLet's refine it to be very brief as requested.\n\"A baby wearing glasses sits on a bed and flips through the pages of a large book.\" This covers the key points.\n\n\nA baby wearing glasses sits on a bed and flips through the pages of a large book.",
+      "finish_reason": "stop",
+      "raw_message": {
+        "role": "assistant",
+        "content": "\nA baby wearing glasses sits on a bed and flips through the pages of a large book.",
+        "refusal": null,
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": [],
+        "reasoning": "The user wants a brief description of the video.\n\n1.  **Identify the main subject:** A baby/toddler with blonde hair and glasses.\n2.  **Identify the action:** The baby is sitting on a bed, holding a large book (looks like a dictionary or encyclopedia), and \"reading\" it. They are turning the pages.\n3.  **Identify the setting:** A bedroom, likely a child's room given the crib in the background. There's a bed with a patterned quilt.\n4.  **Synthesize the description:** Combine these elements into a concise sentence. \"A baby wearing glasses is sitting on a bed and reading a book.\" Or more detailed: \"A toddler with glasses sits on a bed, holding and turning the pages of a large book as if reading it.\"\n\nLet's refine it to be very brief as requested.\n\"A baby wearing glasses sits on a bed and flips through the pages of a large book.\" This covers the key points.\n"
+      }
+    }
+  ],
+  "passed": 3,
+  "total": 3
+}

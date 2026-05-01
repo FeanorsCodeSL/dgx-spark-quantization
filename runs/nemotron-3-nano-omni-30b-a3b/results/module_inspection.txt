@@ -1,17 +1,29 @@
 Scope command line contains environment variable, which is not expanded by default for now, but will be expanded by default in the future. Use --expand-environment=yes/no to explicitly control it as needed.
 Running as unit: run-r022b56d98d2d4d20b7317aeb487fd28f.scope; invocation ID: 5f433690a51043bc9f00f71c019354a1
 The fast path is not available because one of `(selective_state_update, causal_conv1d_fn, causal_conv1d_update)` is None. Falling back to the naive implementation. To install follow https://github.com/state-spaces/mamba/#installation and https://github.com/Dao-AILab/causal-conv1d
-/home/sergio/git/dgx-spark-quantization/.venv/lib/python3.12/site-packages/timm/models/registry.py:4: FutureWarning: Importing from timm.models.registry is deprecated, please import via timm.models
+<repo>/.venv/lib/python3.12/site-packages/timm/models/registry.py:4: FutureWarning: Importing from timm.models.registry is deprecated, please import via timm.models
   warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.models", FutureWarning)
-/home/sergio/git/dgx-spark-quantization/.venv/lib/python3.12/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+<repo>/.venv/lib/python3.12/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
   warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
 No pretrained configuration specified for vit_huge_patch16_224 model. Using a default. Please add a config to the model pretrained_cfg registry or pass explicitly.
 [transformers] `torch_dtype` is deprecated! Use `dtype` instead!
 [inspect] MODEL_ID=nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16
-[inspect] HF_HOME=/home/sergio/git/dgx-spark-quantization/hf-cache
+[inspect] HF_HOME=<repo>/hf-cache
 [inspect] torch=2.11.0+cu130
-[ERROR] `cache_position` is part of NemotronHForCausalLM.forward's signature, but not documented. Make sure to add it to the docstring of the function in /home/sergio/git/dgx-spark-quantization/hf-cache/modules/transformers_modules/nvidia/Nemotron_hyphen_3_hyphen_Nano_hyphen_Omni_hyphen_30B_hyphen_A3B_hyphen_Reasoning_hyphen_BF16/d15962741057ae3a07147df504060e9f0838224e/modeling_nemotron_h.py.
-Loading weights:   0%|          | 0/7345 [00:00<?, ?it/s]Loading weights:   5%|▌         | 390/7345 [00:00<00:01, 3890.79it/s]Loading weights:  11%|█         | 780/7345 [00:00<00:01, 3788.16it/s]Loading weights:  16%|█▌        | 1160/7345 [00:00<00:01, 3790.39it/s]Loading weights:  21%|██        | 1540/7345 [00:00<00:01, 3651.12it/s]Loading weights:  26%|██▌       | 1906/7345 [00:00<00:01, 3455.24it/s]Loading weights:  33%|███▎      | 2388/7345 [00:00<00:01, 3878.08it/s]Loading weights:  38%|███▊      | 2780/7345 [00:00<00:01, 3491.52it/s]Loading weights:  54%|█████▍    | 3961/7345 [00:00<00:00, 5872.80it/s]Loading weights:  71%|███████   | 5225/7345 [00:00<00:00, 7834.92it/s]Loading weights:  91%|█████████ | 6699/7345 [00:01<00:00, 9858.16it/s]Loading weights: 100%|██████████| 7345/7345 [00:01<00:00, 6599.70it/s]
+[ERROR] `cache_position` is part of NemotronHForCausalLM.forward's signature, but not documented. Make sure to add it to the docstring of the function in <repo>/hf-cache/modules/transformers_modules/nvidia/Nemotron_hyphen_3_hyphen_Nano_hyphen_Omni_hyphen_30B_hyphen_A3B_hyphen_Reasoning_hyphen_BF16/d15962741057ae3a07147df504060e9f0838224e/modeling_nemotron_h.py.
+
+Loading weights:   0%|          | 0/7345 [00:00<?, ?it/s]
+Loading weights:   5%|▌         | 390/7345 [00:00<00:01, 3890.79it/s]
+Loading weights:  11%|█         | 780/7345 [00:00<00:01, 3788.16it/s]
+Loading weights:  16%|█▌        | 1160/7345 [00:00<00:01, 3790.39it/s]
+Loading weights:  21%|██        | 1540/7345 [00:00<00:01, 3651.12it/s]
+Loading weights:  26%|██▌       | 1906/7345 [00:00<00:01, 3455.24it/s]
+Loading weights:  33%|███▎      | 2388/7345 [00:00<00:01, 3878.08it/s]
+Loading weights:  38%|███▊      | 2780/7345 [00:00<00:01, 3491.52it/s]
+Loading weights:  54%|█████▍    | 3961/7345 [00:00<00:00, 5872.80it/s]
+Loading weights:  71%|███████   | 5225/7345 [00:00<00:00, 7834.92it/s]
+Loading weights:  91%|█████████ | 6699/7345 [00:01<00:00, 9858.16it/s]
+Loading weights: 100%|██████████| 7345/7345 [00:01<00:00, 6599.70it/s]
 [transformers] [1mNemotronH_Nano_Omni_Reasoning_V3 LOAD REPORT[0m from: nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16
 Key                                                       | Status     | 
 ----------------------------------------------------------+------------+-

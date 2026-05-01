@@ -38,6 +38,7 @@ artifacts/*
 # --- Eval bulk (samples_*.jsonl is reproducible; results_*.json is committed) ---
 runs/*/results/**/samples_*.jsonl
 runs/*/results/**/samples_*.json
+runs/*/results/**/fixtures/
 
 # --- Log files & temp ---
 *.log

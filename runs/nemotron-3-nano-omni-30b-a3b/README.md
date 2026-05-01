@@ -7,7 +7,7 @@ multimodal (vision + audio), reasoning fine-tune. 17 safetensors shards,
 
 **Hardware**: NVIDIA DGX Spark, GB10 / SM121a, 128 GiB unified memory.
 
-**Status**: in-progress — last updated 2026-05-01
+**Status**: full eval complete — last updated 2026-05-01
 
 > Driven by [`PLAN.md`](./PLAN.md). The old
 > [`docs/plans/nemotron-3-nano-omni-30b-quantization.md`](../../docs/plans/nemotron-3-nano-omni-30b-quantization.md)
@@ -19,13 +19,18 @@ multimodal (vision + audio), reasoning fine-tune. 17 safetensors shards,
 
 | build | bits | disk | MMLU | GSM8K (strict) | ARC-C | Δ MMLU vs bf16 |
 |---|---|---|---|---|---|---|
-| bf16 baseline | 16 | ~66 GiB | ? | ? | ? | — |
-| AWQ-INT4 W4A16 compressed-tensors (ours, multimodal) | 4 | ~22 GiB | ? | ? | ? | ? |
-| NVFP4 (NVIDIA official, eval only) | 4 (NVFP4 experts) | ~21 GiB | ? | ? | ? | ? |
+| bf16 baseline | 16 | ~66 GiB | 0.7150 | 0.7900 | 0.5239 / 0.5631 norm | — |
+| AWQ-INT4 W4A16 compressed-tensors (ours, multimodal) | 4 | ~22 GiB | 0.6904 | 0.7983 | 0.5247 / 0.5589 norm | -2.46 pp |
+| NVFP4 (NVIDIA official, eval only) | 4 (NVFP4 experts) | ~21 GiB | 0.7124 | 0.7589 | 0.5230 / 0.5401 norm | -0.26 pp |
 
-Current state: our AWQ artifact exists and passes vLLM smoke. Full AWQ,
-NVFP4, and bf16 evals are still pending. Cite NVIDIA's FP8 / NVFP4 builds
-for users who want the official paths. Numbers filled in Phase 6.
+Current state: our AWQ artifact exists, passes vLLM text smoke, passes
+image/video multimodal smoke on the pinned image, and completed the full
+text eval battery on 2026-05-01. Audio smoke also passes when the same
+image has `av` + `soundfile` installed before `vllm serve`; the pinned
+image as-is rejects audio inputs before they reach the model. NVIDIA NVFP4
+also completed the same full eval battery, and the bf16 baseline completed
+afterward. Cite NVIDIA's FP8 / NVFP4 builds for users who want the official
+paths.
 
 For full numbers, settings, and the head-to-head, see
 [`REPORT.md`](./REPORT.md).
@@ -69,7 +74,7 @@ the realistic shipping options end-to-end.
 | [`REPORT.md`](./REPORT.md) | full quant report with deltas |
 | [`PLAN.md`](./PLAN.md) | current execution plan and phase checklist |
 | [`recipes/`](./recipes/) | model-specific quantizer drivers (AWQ-INT4 compressed-tensors) |
-| [`results/`](./results/) | `results_*.json` + `run.log` per full eval, plus `module_inspection.txt` and quant logs |
+| [`results/`](./results/) | `results_*.json` + `run.log` per full eval, multimodal smoke transcripts, plus `module_inspection.txt` and quant logs |
 
 ## Architecture (from config.json)
 
@@ -231,6 +236,9 @@ tools/serve_vllm_docker.sh "$DST_DIR" \
   --max-model-len 8192 \
   --gpu-memory-utilization 0.55 \
   --reasoning-parser nemotron_v3 \
+  --media-io-kwargs '{"video":{"fps":2,"num_frames":256}}' \
+  --video-pruning-rate 0.5 \
+  --allowed-local-media-path / \
   --served-model-name nemotron-omni-awq-ct
 
 # 4. Eval (Phases 3, 4, 5).
@@ -315,7 +323,10 @@ LM tensors plus dense multimodal tensors into bounded safetensors shards.
 ```bash
 tools/serve_vllm_docker.sh "$PWD/artifacts/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-AWQ-INT4" \
   --kv-cache-dtype fp8_e4m3 --max-model-len 8192 --gpu-memory-utilization 0.55 \
-  --reasoning-parser nemotron_v3 --served-model-name nemotron-omni-awq-ct
+  --reasoning-parser nemotron_v3 \
+  --media-io-kwargs '{"video":{"fps":2,"num_frames":256}}' \
+  --video-pruning-rate 0.5 --allowed-local-media-path / \
+  --served-model-name nemotron-omni-awq-ct
 ```
 
 **Verdict: passed.** `/v1/models` returned `nemotron-omni-awq-ct`; the
@@ -323,6 +334,19 @@ first `max_tokens=32` request produced reasoning only and stopped by length,
 but the `max_tokens=128` request returned content `2+2 equals 4.` with
 `finish_reason="stop"`. Full transcript:
 [`results/awq_ct_smoke.txt`](./results/awq_ct_smoke.txt).
+
+Multimodal smoke used downloaded public fixtures through
+[`recipes/multimodal_smoke.py`](./recipes/multimodal_smoke.py):
+
+| serve environment | image | audio | video | result |
+|---|---:|---:|---:|---|
+| pinned `:20260428` image as-is | pass | fail | pass | [`2/3`](./results/multimodal_smoke/multimodal_smoke.md) |
+| pinned `:20260428` image with `av` + `soundfile` installed before `vllm serve` | pass | pass | pass | [`3/3`](./results/multimodal_smoke_audio_extra/multimodal_smoke.md) |
+
+The audio failure on the bare image is a serving-image dependency issue:
+vLLM logged `Please install vllm[audio] for audio support` / missing `av`
+while decoding the WAV input. With `av` and `soundfile` available before
+startup, the same artifact returned a valid audio description.
 
 The successful serve log selected the compressed-tensors path
 (`quantization=compressed-tensors`,

@@ -95,7 +95,7 @@ AutoRound INT4, GPTQ, NVFP4, MXFP4, GGUF→safetensors transcoding.
 | run | base model | schemes | status | report |
 |---|---|---|---|---|
 | [`qwen3.6-35b-distill`](./runs/qwen3.6-35b-distill/) | [`lordx64/Qwen3.6-35B-A3B-Claude-4.7-Opus-Reasoning-Distilled`](https://huggingface.co/lordx64/Qwen3.6-35B-A3B-Claude-4.7-Opus-Reasoning-Distilled) | FP8 dynamic, AWQ-INT4 GEMM | done (2026-04-27) | [REPORT](./runs/qwen3.6-35b-distill/REPORT.md) |
-| [`nemotron-3-nano-omni-30b-a3b`](./runs/nemotron-3-nano-omni-30b-a3b/) | [`nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16`](https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16) | AWQ-INT4 W4A16 compressed-tensors | in-progress | [REPORT](./runs/nemotron-3-nano-omni-30b-a3b/REPORT.md) |
+| [`nemotron-3-nano-omni-30b-a3b`](./runs/nemotron-3-nano-omni-30b-a3b/) | [`nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16`](https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16) | AWQ-INT4 W4A16 compressed-tensors | done (2026-05-01) | [REPORT](./runs/nemotron-3-nano-omni-30b-a3b/REPORT.md) |
 
 ### Headline (qwen3.6-35b-distill)
 
@@ -106,6 +106,19 @@ AutoRound INT4, GPTQ, NVFP4, MXFP4, GGUF→safetensors transcoding.
 | AWQ-INT4 GEMM (multimodal) | 4 | ~24 GiB | 0.8068 | 0.9386 | −2.73 pp |
 
 FP8 effectively lossless. AWQ trades MMLU for disk + multimodal preservation.
+
+### Headline (nemotron-3-nano-omni-30b-a3b)
+
+| build | bits | disk | MMLU | GSM8K (strict) | ARC-C | Delta MMLU vs bf16 |
+|---|---|---|---|---|---|---|
+| bf16 baseline | 16 | ~66 GiB | 0.7150 | 0.7900 | 0.5239 / 0.5631 norm | — |
+| AWQ-INT4 W4A16 compressed-tensors | 4 | ~22 GiB | 0.6904 | 0.7983 | 0.5247 / 0.5589 norm | -2.46 pp |
+| NVFP4 (NVIDIA official, eval only) | 4 | ~21 GiB | 0.7124 | 0.7589 | 0.5230 / 0.5401 norm | -0.26 pp |
+
+AWQ is the local publishable artifact; NVFP4 is NVIDIA's official artifact
+measured for comparison. AWQ multimodal smoke passed for image/video on
+the pinned vLLM image; audio passed after adding the missing vLLM audio
+decode dependencies (`av` + `soundfile`) before server startup.
 
 ---
 
@@ -145,7 +158,7 @@ FP8 effectively lossless. AWQ trades MMLU for disk + multimodal preservation.
 │   │   ├── REPORT.md                      full quant report with deltas
 │   │   ├── recipes/                       model-specific quantizers
 │   │   └── results/                       per-build eval JSONs + run.log
-│   └── nemotron-3-nano-omni-30b-a3b/      in-progress Nemotron Omni run
+│   └── nemotron-3-nano-omni-30b-a3b/      completed Nemotron Omni run
 │       ├── README.md
 │       ├── PLAN.md
 │       ├── REPORT.md

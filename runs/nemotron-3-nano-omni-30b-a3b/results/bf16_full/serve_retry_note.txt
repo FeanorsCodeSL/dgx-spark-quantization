@@ -1,0 +1,1 @@
+BF16 first serve attempt failed at 2026-05-01T03:00:45+02:00 with --gpu-memory-utilization 0.45: vLLM reported no available memory for cache blocks after loading 61.59 GiB of weights. Retrying with higher gpu_memory_utilization.
