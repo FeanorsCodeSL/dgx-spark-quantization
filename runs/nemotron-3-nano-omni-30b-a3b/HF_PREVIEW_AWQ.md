@@ -1,5 +1,5 @@
 ---
-license: nvidia-open-model-agreement
+license: other
 language:
 - en
 library_name: transformers
